@@ -1,0 +1,248 @@
+---
+title: "Thyroid cancer rate before and after Chernobyl disaster"
+author: "Basile Pasquini"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+date: "`r Sys.Date()`"
+bibliography: References.bib
+biblio-style: apa
+---
+
+![](https://www.gannett-cdn.com/presto/2019/06/11/USAT/f1123d6d-f46f-4b0d-bd61-eb0f72be75dc-XXX_CHERNOBYL_DISASTER_1986.JPG?crop=1999,1124,x0,y356&width=1600&height=800&format=pjpg&auto=webp)
+
+# Introduction
+
+In April 1984, an accident happened in the reactor number 4 of the Chernobyl's nuclear central. During a safety test, many mistakes and misunderstanding of the situation were made on what was happening. The reactor started to be too unstable and exploded releasing a huge amount of radioactivity. This disaster is the most serious and famous example of the risk related to the human nuclear activity.\
+This event has been analyzed many times in order to understand how an accident like that could happen and how to avoid it. Indeed, we now know in detail the procedure and the error that happened during that night between the 25 and 26th April.\
+However, the number of death and the impact on human health are unclear. Indeed, it is hard to directly attribute a death or a cancer to this disaster. A high amount of radiation can lead to a directly linked observable death, as for  people who were present in the central during the accident. Although, this event spreads a lower, but still dangerous, amount of radioactivity all around the world. Radioactivity is known for its effects on human health, especially for the cancer formation. Many people living around the city of Chernobyl or even further in Europe might have been affect by the radioactivity release. This is why it is hard to attribute an accurate number of deaths due to this event. Many people might have suffered of a cancer disease, but we do not know how related to the nuclear explosion it is. The number of deaths attributed, for now, is between 40 directly linked deaths to 4'000 [@Wikipedia] or more deaths related to the radioactivity release, which seems like a very large interval.\
+An increase in the cancer rate due to the radioactivity release has been observed and several studies tend to show a greater increase for the thyroid cancer than other cancer types [@Williams] . Therefore, in this report I am interested in this type of cancer  particularly. I want to answer to the **question** : "Is there indeed a significant increase of the thyroid cancer and is there a difference between men and women in this increase?"
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library("stringr")
+library(readxl)
+library(readr)
+library(readr)
+References <- read_csv("References.bib")
+```
+
+# Method and results
+
+## Data
+
+In this report, I use a dataset imported from [Kaggle](https://www.kaggle.com/datasets/marshuu/cancer-rate-before-and-after-chernobyl) named "Cancer rate before and after Chernobyl", provided by Maryna Shut. According to the dataset description, the data were originally collected by the Byelorussian center of Medical Technologies and then published in a scientific article. These data were provided by around 100'000 people.\
+This dataset includes **five different variables**. Firstly, there is two groups made to separate cases before and after Chernobyl disaster, from 1977 to 1985 (named 1985) and from 1986 to 1994 (named 1986). This variable is named ***"year"***. There is also the ***sex*** of the person, the ***location*** where the data were collected ; including Gomel, Mogilev, and all the country of Belarus, three locations quite close to the Chernobyl central (100-200 km). Finally, there is the ***cancer type***, which report seven different types, and the number of ***cases*** per 100'000 people. I reduced my dataset size in order to only focus on the thyroid cancers, which led me to a table containing only 12 rows.\
+Here is the table I will use for the analysis :
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+readxl::read_xlsx("Cancer2.xlsx")
+cancer2 <- read_xlsx("Cancer2.xlsx")
+View(cancer2)
+
+```
+
+## Hypotheses
+
+In order to answer to my research question, I suggested two hypotheses\
+
+Firstly :
+
+-   **H0** --\> There is *no* difference in the number of thyroid cancer cases' between the years before Chernobyl event and after it.\
+-   **H1** --\> There is an *increase* in the number of thyroid cancer cases' between the years before Chernobyl event and after it.
+
+Secondly :
+
+-   **H0** --\> There is *no* difference in the number of thyroid cancer cases' between men and women.\
+-   **H1** --\> There *is* a difference in the number of thyroid cancer cases' between men and women.\
+
+I ran different exploratory and statistical analyses to test these hypotheses which are part of the following section.
+
+## Results
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer2<- cancer2 %>% 
+  mutate(cases=as.numeric(cancer2$cases))
+
+cancer2<- cancer2 %>% 
+  mutate(year=as.character(cancer2$year))
+
+
+
+ cancer2 <- cancer2 %>% 
+  mutate(year = factor(year, levels = c(1985, 1986), labels = c("1985", "1986")))
+
+
+
+```
+
+Here is a first box plot showing the number of cases of women and men per 100'000 people. We can already see a tendency that women seem to have more thyroid's cancer than men.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+ggplot(cancer2, aes(x= sex, y= cases)) + geom_boxplot() + ggtitle("Box plot of the number of cases depending on the sex")
+```
+
+This second box plot represents the difference between years before Chernobyl disaster and after it . The "1985" modality includes the period from 1977 to 1985 and the "1986" modality includes the period from 1986 to 1994. Again, a certain pattern seems to emerge from this. Indeed, the number of cases' mean in the 1986 modality is higher than in the 1985 modality. However, in order to know if it is significant or not and to have an idea of how strong the effect is, I have to run some statistical test.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+ggplot(cancer2, aes(x= year, y= cases)) + geom_boxplot() + ggtitle("Box plot of the number of cases depending on the years")
+```
+
+Here are the statistical analyses :
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE, results='markup'}
+
+case_aov <- aov(cases ~ sex +  year, cancer2)
+case_aov
+summary(case_aov)
+
+
+multiple_anova <- lm(cases ~ sex + year, data = cancer2)
+summary(multiple_anova)
+```
+
+These two statistical analyses report an significant effect of both variables. The p-value associated with the variable "sex" is around 0.01233 which is significant. Indeed, the threshold for significance is 0.05, and this p-value is lower than the threshold.\
+For the second variable, year, the p-value associated is around 0.00755, which is also significant.
+
+However, I can also analyse more in details these differences by putting filters and creating other box plot and other ANOVA. For instance, this box plot show the number of cases during years 1977 to 1985 for both men and women. This allows me to see how different was the number of cases before Chernobyl event.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer_1985 <- cancer2 %>% 
+  filter(year %in% c("1985"))
+
+cancer_1985<- cancer_1985 %>%             ##boxplot year 1985
+  mutate(cases=as.numeric(cancer_1985$cases))
+
+cancer_1985<- cancer_1985 %>% 
+  mutate(year=as.character(cancer_1985$year))
+
+ggplot(cancer_1985, aes(x= sex, y= cases)) + geom_boxplot() + ggtitle("Box plot of the number of cases during years 1977-1985 for men and women")
+```
+
+I can also run an ANOVA analysis to interpret whether this observable difference is significant statistically
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer_1985 <- cancer2 %>% ## ANOVA sex difference in 1985
+  filter(year %in% c("1985"))
+
+case_aov <- aov(cases ~ sex, cancer_1985)
+case_aov
+summary(case_aov)
+```
+
+The results obtained by the ANOVA demonstrate that this difference is significant, with a p-value of around 0.003. There is a difference between men and women before the disaster; women seemed to have more thyroid cancer cases.
+
+I also created a box plot to see if this difference was present after the event :
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer_1986 <- cancer2 %>% 
+  filter(year %in% c("1986"))
+
+cancer_1986<- cancer_1986 %>%             ##boxplot year 1986
+  mutate(cases=as.numeric(cancer_1986$cases))
+
+cancer_1986<- cancer_1986 %>% 
+  mutate(year=as.character(cancer_1986$year))
+
+ggplot(cancer_1986, aes(x= sex, y= cases)) + geom_boxplot() + ggtitle("Box plot of the number of cases during years 1986-1994 for men and women")
+```
+
+Again, I ran an ANOVA to see how significant this difference is and I obtained a p-value of around 0.038. The difference is significant; after the event women still have more thyroid cancer cases than men.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer_1986 <- cancer2 %>% ## ANOVA sex difference in 1986
+  filter(year %in% c("1986"))
+
+case_aov <- aov(cases ~ sex, cancer_1986)
+case_aov
+summary(case_aov)
+```
+
+After that, I created a box plot to see the difference of the number of cases for women before and after Chernobyl.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer_women <- cancer2 %>%  
+  filter(sex %in% c("women"))
+
+cancer_women<- cancer_women %>%             ##boxplot women 1985 vs 1986
+  mutate(cases=as.numeric(cancer_women$cases))
+
+cancer_women<- cancer_women %>% 
+  mutate(year=as.character(cancer_women$year))
+
+ggplot(cancer_women, aes(x= sex, y= cases, fill = year)) + geom_boxplot() + ggtitle("Box plot of the number of cases of thyroid cancer for women before and after
+Chernobyl")
+```
+
+As usual, I ran an ANOVA and found that this difference was significant, meaning that the thyroid cancer cases increased significantly for women with the event of Chernobyl.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer_women <- cancer2 %>% ## ANOVA sex difference for women before and after Chernobyl
+  filter(sex %in% c("women"))
+
+case_aov <- aov(cases ~ year, cancer_women)
+case_aov
+summary(case_aov)
+```
+
+Finally I wanted to see if this difference was also present for men, so I created a box plot and ran an ANOVA
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer_men <- cancer2 %>%  
+  filter(sex %in% c("men"))
+
+  
+cancer_men<- cancer_men %>%             ##boxplot men 1985 vs 1986
+  mutate(cases=as.numeric(cancer_men$cases))
+
+cancer_men<- cancer_men %>% 
+  mutate(year=as.character(cancer_men$year))
+
+ggplot(cancer_men, aes(x= sex, y= cases, fill = year)) + geom_boxplot() + ggtitle("Box plot of the number of cases of thyroid cancer for men before and after
+Chernobyl")
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer_men <- cancer2 %>% ## ANOVA sex difference for men before and after  Chernobyl
+  filter(sex %in% c("men"))
+
+case_aov <- aov(cases ~ year, cancer_men)
+case_aov
+summary(case_aov)
+```
+
+Surprisingly, the difference was not significant this time, thus I can't say that a significant increase of thyroid cancer cases has been observed after Chernobyl disaster for men.
+
+This last graph summarizes all exploratory analysis on one graph.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+cancer2<- cancer2 %>% 
+  mutate(cases=as.numeric(cancer2$cases))
+
+cancer2<- cancer2 %>% 
+  mutate(year=as.character(cancer2$year))
+
+ggplot(cancer2, aes(x= sex, y= cases, fill = year)) + geom_boxplot() + ggtitle("Box plot of the number of cases of thyroid cancer for women and men before and 
+after Chernobyl")
+```
+
+# Discussion
+
+All of theses analyses show several different result.\
+Women seem to have more thyroid cancer than men in general, and that for the three regions of my dataset (Gomel Mogilev and Belarus) the event of Chernobyl has increased the amount of cases. A review investigates the gender effect on thyroid cancer cases and show that women tend to have more thyroid cancer, although men seem to have more serious symptoms and more advanced stage [@Yao] . This gender quantitative difference in cases is also present in my data.
+
+Another significant result obtained is the difference before and after Chernobyl of thyroid cancer cases. Indeed, the "general" ANOVA, the one that include the sex variable and the year variable, showed a significant effect of this second variable (p-value = 0.00755). This result is not really surprising, radiation effects on health, and especially cancer, are well-known and documented. A study demonstrates the increase of thyroid cancer cases, and also show that it depends on the radiation dose [@Nifikorov] .
+
+However, the increase of cancer rate was not significant for men, even though for women it was. The p-value obtained with the ANOVA that compared men before and after the event was 0.0829, which is close to the significance threshold but still too big. This might result from the fact that my sample is quite small. Studies on the effect of Chernobyl on thyroid cancer suggest a significant effect on both men and women.
+
+# Conclusion
+
+This report used a dataset of cancer cases in different regions and cancer types for men and women before and after Chernobyl disaster. The analysis focused on the thyroid cancer type and revealed an effect of the gender and the period (before or after). However, the sample size used is quite small and it might have led to incorrect p-value or other statistical value.\
+Finally, Chernobyl's effects on population health is still a large studied field and many research are made every year to understand how it has impact people and generation born after the event.
+
+# Literature
